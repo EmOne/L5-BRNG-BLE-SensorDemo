@@ -41,7 +41,16 @@ int32_t CUSTOM_HYBRID_SENSOR_Read_Register(uint32_t Instance, uint8_t Reg, uint8
 
       break;
 #endif
+#if (USE_CUSTOM_HYBRID_SENSOR_MCP3201_4921_0 == 1)
+	case CUSTOM_MCP3201_4921_0:
+		if (MCP3201_4921_Read_Reg(HybridCompObj[Instance], Reg, Data)
+				!= BSP_ERROR_NONE)
+		{
+			return BSP_ERROR_COMPONENT_FAILURE;
+		}
 
+		break;
+#endif
     default:
       return BSP_ERROR_WRONG_PARAM;
   }

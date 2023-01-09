@@ -244,6 +244,11 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Drivers/BSP/Components/lis2dtw12/lis2dtw12_reg.c</locationURI>
 		</link>
 		<link>
+			<name>Drivers/BSP/Components/mcp3201_4921.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Drivers/BSP/Components/mcp3201_4921/mcp3201_4921.c</locationURI>
+		</link>
+		<link>
 			<name>Drivers/BSP/STM32L5xx_Nucleo/stm32l5xx_nucleo.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Drivers/BSP/STM32L5xx_Nucleo/stm32l5xx_nucleo.c</locationURI>

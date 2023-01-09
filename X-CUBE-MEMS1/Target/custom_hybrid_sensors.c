@@ -38,6 +38,17 @@ static int32_t CUSTOM_LIS2DTW12_0_WriteReg(uint16_t Addr, uint16_t Reg, uint8_t 
 static int32_t CUSTOM_LIS2DTW12_0_ReadReg(uint16_t Addr, uint16_t Reg, uint8_t *pdata, uint16_t len);
 #endif
 
+#if (USE_CUSTOM_HYBRID_SENSOR_MCP3201_4921_0 == 1)
+static int32_t MCP3201_4921_0_Probe(uint32_t Functions);
+static int32_t CUSTOM_MCP3201_4921_0_Init(void);
+static int32_t CUSTOM_MCP3201_4921_0_DeInit(void);
+static int32_t CUSTOM_MCP3201_4921_0_WriteReg(uint16_t Addr, uint16_t Reg,
+		uint8_t *pdata, uint16_t len);
+static int32_t CUSTOM_MCP3201_4921_0_ReadReg(uint16_t Addr, uint16_t Reg,
+		uint8_t *pdata, uint16_t len);
+static void CUSTOM_MCP3201_4921_0_Enable(uint8_t en);
+#endif
+
 /**
  * @brief  Initialize the hybrid sensor
  * @param  Instance Hybrid sensor instance
@@ -68,6 +79,15 @@ int32_t CUSTOM_HYBRID_SENSOR_Init(uint32_t Instance, uint32_t Functions)
       }
 
       break;
+#endif
+#if (USE_CUSTOM_HYBRID_SENSOR_MCP3201_4921_0 == 1)
+	case CUSTOM_MCP3201_4921_0:
+		if (MCP3201_4921_0_Probe(Functions) != BSP_ERROR_NONE)
+		{
+			return BSP_ERROR_NO_INIT;
+		}
+
+		break;
 #endif
 
     default:
@@ -785,3 +805,139 @@ static int32_t CUSTOM_LIS2DTW12_0_ReadReg(uint16_t addr, uint16_t reg, uint8_t *
 }
 #endif
 
+#if (USE_CUSTOM_HYBRID_SENSOR_MCP3201_4921_0 == 1)
+static int32_t MCP3201_4921_0_Probe(uint32_t Functions)
+{
+	MCP3201_4921_IO_t io_ctx;
+	uint8_t id;
+	static MCP3201_4921_Object_t mcp3201_4921_obj_0;
+	MCP3201_4921_Capabilities_t cap;
+
+	/* Configure the hybrid sensor driver */
+	io_ctx.BusType = MCP3201_4921_SPI_4WIRES_BUS; /* SPI 4-Wires */
+	io_ctx.Address = 0x00;
+	io_ctx.Init = CUSTOM_MCP3201_4921_0_Init;
+	io_ctx.DeInit = CUSTOM_MCP3201_4921_0_DeInit;
+	io_ctx.ReadReg = CUSTOM_MCP3201_4921_0_ReadReg;
+	io_ctx.WriteReg = CUSTOM_MCP3201_4921_0_WriteReg;
+	io_ctx.GetTick = BSP_GetTick;
+	io_ctx.Enable = CUSTOM_MCP3201_4921_0_Enable;
+	io_ctx.Delay = HAL_Delay;
+
+	if (MCP3201_4921_RegisterBusIO(&mcp3201_4921_obj_0, &io_ctx)
+			!= MCP3201_4921_OK)
+	{
+		return BSP_ERROR_UNKNOWN_COMPONENT;
+	}
+
+	if (MCP3201_4921_GetCapabilities(&mcp3201_4921_obj_0, &cap)
+			!= MCP3201_4921_OK)
+	{
+		return BSP_ERROR_COMPONENT_FAILURE;
+	}
+//
+//	  HybridMotionCtx[CUSTOM_LIS2DTW12_0].Functions = ((cap.Acc     == 1U) ? HYBRID_ACCELERO : 0)
+//	                                                | ((cap.Gyro    == 1U) ? HYBRID_GYRO     : 0)
+//	                                                | ((cap.Magneto == 1U) ? HYBRID_MAGNETO  : 0);
+//
+//	  HybridEnvCtx[CUSTOM_LIS2DTW12_0].Functions = ((cap.Temperature == 1U) ? HYBRID_TEMPERATURE : 0)
+//	                                             | ((cap.Humidity    == 1U) ? HYBRID_HUMIDITY    : 0)
+//	                                             | ((cap.Pressure    == 1U) ? HYBRID_PRESSURE    : 0);
+//
+	HybridCompObj[CUSTOM_MCP3201_4921_0] = &mcp3201_4921_obj_0;
+
+	/* The second cast (void *) is added to bypass Misra R11.3 rule */
+	HybridDrv[CUSTOM_MCP3201_4921_0] =
+			(HYBRID_SENSOR_CommonDrv_t*) (void*) &MCP3201_4921_COMMON_Driver;
+//
+//	  if ((Functions & HybridMotionCtx[CUSTOM_MCP3201_4921_0].Functions & HYBRID_ACCELERO) == HYBRID_ACCELERO)
+//	  {
+//	    /* The second cast (void *) is added to bypass Misra R11.3 rule */
+//	    HybridMotionFuncDrv[CUSTOM_MCP3201_4921_0][HYBRID_MOTION_FUNC_ID(HYBRID_ACCELERO)] = (HYBRID_MOTION_SENSOR_FuncDrv_t *)(void *)&LIS2DTW12_ACC_Driver;
+//
+	if (HybridDrv[CUSTOM_MCP3201_4921_0]->Init(
+			&mcp3201_4921_obj_0) != MCP3201_4921_OK)
+	{
+		return BSP_ERROR_COMPONENT_FAILURE;
+	}
+//	  }
+//
+//	  if ((Functions & HybridEnvCtx[CUSTOM_LIS2DTW12_0].Functions & HYBRID_TEMPERATURE) == HYBRID_TEMPERATURE)
+//	  {
+//	    /* The second cast (void *) is added to bypass Misra R11.3 rule */
+//	    HybridEnvFuncDrv[CUSTOM_MCP3201_4921_0][HYBRID_ENV_FUNC_ID(HYBRID_TEMPERATURE)] = (HYBRID_ENV_SENSOR_FuncDrv_t *)(void *)&LIS2DTW12_TEMP_Driver;
+//
+//	    if (HybridDrv[CUSTOM_MCP3201_4921_0]->Init(HybridCompObj[CUSTOM_LIS2DTW12_0]) != LIS2DTW12_OK)
+//	    {
+//	      return BSP_ERROR_COMPONENT_FAILURE;
+//	    }
+//	  }
+
+	return BSP_ERROR_NONE;
+}
+
+static int32_t CUSTOM_MCP3201_4921_0_Init(void)
+{
+	if (CUSTOM_MCP3201_4921_0_SPI_Init() != BSP_ERROR_NONE)
+	{
+		return BSP_ERROR_UNKNOWN_FAILURE;
+	}
+
+	return BSP_ERROR_NONE;
+}
+
+static int32_t CUSTOM_MCP3201_4921_0_DeInit(void)
+{
+	if (CUSTOM_MCP3201_4921_0_SPI_DeInit() == BSP_ERROR_NONE)
+	{
+		return BSP_ERROR_UNKNOWN_FAILURE;
+	}
+
+	return BSP_ERROR_NONE;
+}
+
+static int32_t CUSTOM_MCP3201_4921_0_WriteReg(uint16_t Addr, uint16_t Reg,
+		uint8_t *pdata, uint16_t len)
+{
+//	uint8_t dataReg = (uint8_t) reg;
+
+	/* CS Enable */
+	HAL_GPIO_WritePin(CUSTOM_MCP3201_4921_0_T_CS_PORT,
+			CUSTOM_MCP3201_4921_0_T_CS_PIN, GPIO_PIN_RESET);
+
+	if (CUSTOM_MCP3201_4921_0_SPI_Send(pdata, len) != BSP_ERROR_NONE)
+	{
+		return BSP_ERROR_UNKNOWN_FAILURE;
+	}
+
+	/* CS Disable */
+	HAL_GPIO_WritePin(CUSTOM_MCP3201_4921_0_T_CS_PORT,
+			CUSTOM_MCP3201_4921_0_T_CS_PIN, GPIO_PIN_SET);
+}
+
+static int32_t CUSTOM_MCP3201_4921_0_ReadReg(uint16_t Addr, uint16_t Reg,
+		uint8_t *pdata, uint16_t len)
+{
+
+	/* CS Enable */
+	HAL_GPIO_WritePin(CUSTOM_MCP3201_4921_0_R_CS_PORT,
+			CUSTOM_MCP3201_4921_0_R_CS_PIN, GPIO_PIN_RESET);
+
+	if (CUSTOM_MCP3201_4921_0_SPI_Recv(pdata, len) != BSP_ERROR_NONE)
+	{
+		return BSP_ERROR_UNKNOWN_FAILURE;
+	}
+
+	/* CS Disable */
+	HAL_GPIO_WritePin(CUSTOM_MCP3201_4921_0_R_CS_PORT,
+			CUSTOM_MCP3201_4921_0_R_CS_PIN, GPIO_PIN_SET);
+
+	  return BSP_ERROR_NONE;
+}
+
+static void CUSTOM_MCP3201_4921_0_Enable(uint8_t en)
+{
+	HAL_GPIO_WritePin(CUSTOM_MCP3201_4921_0_R_EN_PORT,
+	CUSTOM_MCP3201_4921_0_R_EN_PIN, GPIO_PIN_SET);
+}
+#endif
